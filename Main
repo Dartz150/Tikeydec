@@ -1,0 +1,32 @@
+<?php
+function secret($start,$len) {
+    $ret = "";
+    $add = $start + $len;
+    for ($i = 0; $i < $len; $i++) {
+        $ret .= pack("H*", substr(sprintf("%02x", $start), -2));
+        $next = $start + $add;
+        $add = $start; $start = $next;
+    }
+    return $ret;
+}
+ 
+function mungetid($tid) {
+    while (substr($tid,0,2) == "00")
+        $tid = substr($tid, 2); if ($tid == "") $tid = "00";
+    return pack("H*", $tid);
+}
+ 
+$SECRET = secret(-3, 10);
+ 
+function derive($tid, $pass) {
+    global $SECRET;
+    return hash_pbkdf2("sha1", $pass, md5($SECRET . mungetid($tid), true), 20, 32);
+}
+ 
+function derive_all($tid) {
+    $passes = ["nintendo", "mypass"];
+    foreach ($passes as $pass)
+        printf("%s : %s [%s]\n", $tid, derive($tid, $pass), $pass);
+}
+   
+derive_all("000100014e414150");
